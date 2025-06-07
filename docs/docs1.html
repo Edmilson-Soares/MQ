@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação MQ Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-2">Documentação MQ Client</h1>
+            <p class="text-xl text-gray-600">Bibliotecas cliente para comunicação com servidor MQ em Go e Node.js</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-2 rounded-full mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-800">Go Client</h2>
+                </div>
+                <p class="text-gray-600 mb-4">Biblioteca cliente escrita em Go para comunicação com servidor MQ.</p>
+                <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                    <pre><code class="language-go">go get github.com/seu-repositorio/mq-client</code></pre>
+                </div>
+                <a href="#go-client" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver documentação completa →</a>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-2 rounded-full mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-800">Node.js Client</h2>
+                </div>
+                <p class="text-gray-600 mb-4">Biblioteca cliente escrita em JavaScript para Node.js para comunicação com servidor MQ.</p>
+                <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                    <pre><code class="language-bash">npm install mq-client</code></pre>
+                </div>
+                <a href="#node-client" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver documentação completa →</a>
+            </div>
+        </div>
+
+        <!-- Go Client Documentation -->
+        <section id="go-client" class="bg-white rounded-lg shadow-md p-6 mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Go Client</h2>
+            
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Conexão</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-go">package main
+
+import (
+    "fmt"
+    "time"
+    "github.com/seu-repositorio/mq-client/client"
+)
+
+func main() {
+    // Conectar ao servidor MQ
+    mq, err := client.Dial("mq://user:password@localhost:8080")
+    if err != nil {
+        panic(err)
+    }
+    defer mq.Stop()
+
+    fmt.Println("Conectado com ID:", mq.ID)
+}</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Publicar/Assinar</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-go">// Assinar um tópico
+mq.Sub("meu.topico", func(msg client.MQData) {
+    fmt.Printf("Mensagem recebida: %s\n", msg.Payload)
+})
+
+// Publicar em um tópico
+mq.Pub("meu.topico", "Olá, mundo!")</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Requisição/Resposta</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-go">// Implementar um serviço
+mq.Service("meu.servico", func(msg client.MQData, reply func(err string, payload string)) {
+    reply("", "Resposta para: " + msg.Payload)
+})
+
+// Chamar um serviço
+res, err := mq.Req("meu.servico", "dados da requisição", 5*time.Second)
+if err != nil {
+    fmt.Println("Erro:", err)
+} else {
+    fmt.Println("Resposta:", res)
+}</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Armazenamento Chave-Valor</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-go">// Operações básicas
+mq.Set("chave", "valor")
+valor, err := mq.Get("chave")
+mq.Del("chave")
+
+// Operações com buckets
+mq.BSet("meubucket", "chave", "valor")
+valor, err = mq.BGet("meubucket", "chave")
+mq.BDel("meubucket", "chave")
+
+// Gerenciamento de buckets
+mq.CreateBucket("novobucket")
+mq.DeleteBucket("bucketantigo")</code></pre>
+            </div>
+        </section>
+
+        <!-- Node.js Client Documentation -->
+        <section id="node-client" class="bg-white rounded-lg shadow-md p-6 mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Node.js Client</h2>
+            
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Conexão</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-javascript">const { MQ } = require('mq-client');
+
+async function main() {
+    try {
+        // Conectar ao servidor MQ
+        const mq = await MQ.dial('mq://user:password@localhost:8080');
+        
+        console.log('Conectado com ID:', mq.ID);
+        
+        // Fechar conexão quando terminar
+        process.on('SIGINT', () => mq.stop());
+    } catch (err) {
+        console.error('Erro de conexão:', err);
+    }
+}
+
+main();</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Publicar/Assinar</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-javascript">// Assinar um tópico
+mq.sub('meu.topico', (msg) => {
+    console.log('Mensagem recebida:', msg.payload);
+});
+
+// Publicar em um tópico
+mq.pub('meu.topico', 'Olá, mundo!');</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Requisição/Resposta</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-javascript">// Implementar um serviço
+mq.service('meu.servico', (msg, reply) => {
+    reply(null, 'Resposta para: ' + msg.payload);
+});
+
+// Chamar um serviço
+try {
+    const res = await mq.req('meu.servico', 'dados da requisição', 5000);
+    console.log('Resposta:', res);
+} catch (err) {
+    console.error('Erro:', err);
+}</code></pre>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Armazenamento Chave-Valor</h3>
+            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                <pre><code class="language-javascript">// Operações básicas
+await mq.set('chave', 'valor');
+const valor = await mq.get('chave');
+await mq.del('chave');
+
+// Operações com buckets
+await mq.bSet('meubucket', 'chave', 'valor');
+const valor = await mq.bGet('meubucket', 'chave');
+await mq.bDel('meubucket', 'chave');
+
+// Gerenciamento de buckets
+await mq.createBucket('novobucket');
+await mq.deleteBucket('bucketantigo');</code></pre>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Exemplos Práticos</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-indigo-50 p-5 rounded-lg">
+                    <h3 class="text-xl font-semibold text-indigo-800 mb-3">Chat em Tempo Real</h3>
+                    <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                        <pre><code class="language-go">// Go - Servidor de chat
+mq.Sub("chat.room1", func(msg MQData) {
+    fmt.Printf("[%s]: %s\n", msg.FromId, msg.Payload)
+})
+
+// Enviar mensagem
+mq.Pub("chat.room1", "Olá pessoal!")</code></pre>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <pre><code class="language-javascript">// Node.js - Cliente de chat
+mq.sub('chat.room1', (msg) => {
+    console.log(`[${msg.fromId}]: ${msg.payload}`);
+});
+
+// Enviar mensagem
+mq.pub('chat.room1', 'Olá pessoal!');</code></pre>
+                    </div>
+                </div>
+
+                <div class="bg-green-50 p-5 rounded-lg">
+                    <h3 class="text-xl font-semibold text-green-800 mb-3">Microserviço de Cálculo</h3>
+                    <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                        <pre><code class="language-go">// Go - Serviço de cálculo
+mq.Service("calc.square", func(msg MQData, reply func(err string, payload string)) {
+    num, err := strconv.Atoi(msg.Payload)
+    if err != nil {
+        reply("Número inválido", "")
+        return
+    }
+    reply("", strconv.Itoa(num*num))
+})</code></pre>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <pre><code class="language-javascript">// Node.js - Chamada ao serviço
+try {
+    const result = await mq.req('calc.square', '5', 1000);
+    console.log('Resultado:', result); // 25
+} catch (err) {
+    console.error('Erro:', err);
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-12 pt-6 border-t border-gray-200 text-center text-gray-500">
+            <p>© 2023 MQ Client Documentation. Todos os direitos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>

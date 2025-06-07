@@ -1,0 +1,126 @@
+Markdown Documentation
+markdown
+# MQ Client Documentation
+
+A powerful client library for distributed messaging systems in Go and Node.js.
+
+## Features
+
+- **High Performance**: Optimized for high throughput and low latency
+- **Cross-Platform**: Available for Go and Node.js
+- **Secure**: Built-in authentication and TLS support
+- **Open Standards**: JSON-over-TCP protocol
+- **Key-Value Store**: Embedded key-value storage with bucket support
+- **Fault Tolerant**: Automatic reconnection and robust error handling
+
+## Installation
+
+### Go
+```bash
+go get github.com/your-repo/mq-client
+Node.js
+bash
+npm install mq-client
+# or
+yarn add mq-client
+Basic Usage
+Go
+go
+package main
+
+import (
+    "fmt"
+    "log"
+    "github.com/your-repo/mq-client/client"
+)
+
+func main() {
+    // Connect to MQ server
+    mq, err := client.Dial("mq://user:password@localhost:8080")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer mq.Stop()
+
+    fmt.Println("Connected with ID:", mq.ID)
+}
+Node.js
+javascript
+const { MQ } = require('mq-client');
+
+async function main() {
+    try {
+        // Connect to MQ server
+        const mq = await MQ.dial('mq://user:password@localhost:8080');
+        console.log('Connected with ID:', mq.ID);
+        
+        // Close connection on exit
+        process.on('SIGINT', () => mq.stop());
+    } catch (err) {
+        console.error('Connection error:', err);
+    }
+}
+
+main();
+Common Patterns
+Publish/Subscribe
+Go
+go
+// Publisher
+mq.Pub("notifications", "New message received")
+
+// Subscriber
+mq.Sub("notifications", func(msg client.MQData) {
+    fmt.Printf("New notification: %s\n", msg.Payload)
+})
+Node.js
+javascript
+// Publisher
+mq.pub('notifications', 'New message received');
+
+// Subscriber
+mq.sub('notifications', (msg) => {
+    console.log('New notification:', msg.payload);
+});
+Request/Response
+Go
+go
+// Server
+mq.Service("math.square", func(msg client.MQData, reply func(err string, payload string)) {
+    num, _ := strconv.Atoi(msg.Payload)
+    reply("", strconv.Itoa(num*num))
+})
+
+// Client
+res, err := mq.Req("math.square", "5", 2*time.Second)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("Result:", res) // 25
+Node.js
+javascript
+// Server
+mq.service('math.square', (msg, reply) => {
+    const num = parseInt(msg.payload);
+    reply(null, (num * num).toString());
+});
+
+// Client
+const result = await mq.req('math.square', '5', 2000);
+console.log('Result:', result); // 25
+API Reference
+Method	Description	Go Signature	Node.js Signature
+Connection	Establish connection to MQ server	Dial(url string)	dial(url)
+Pub/Sub	Publish/Subscribe to topics	Pub(topic, payload)	pub(topic, payload)
+Sub(topic, callback)	sub(topic, callback)
+Req/Res	Request/Response pattern	Service(topic, handler)	service(topic, handler)
+Req(topic, payload, timeout)	req(topic, payload, timeout)
+Key-Value	Key-value storage operations	Set(key, value)	set(key, value)
+Get(key)	get(key)
+Del(key)	del(key)
+License
+MIT License - © 2023 MQ Client
+
+text
+
+This Markdown document provides a comprehensive overview of the MQ Client library in English, with all the key information from the HTML page in a format suitable for README files or documentation pages.
