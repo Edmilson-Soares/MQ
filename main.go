@@ -2,19 +2,29 @@ package main
 
 import (
 	"fmt"
-	"tcp/mq"
+	"log"
+	"mq/cmd/server"
+	"mq/utils"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
 func main() {
-	// Ouve na porta 8080 em todas as interfaces de rede
+	// Ouve na porta 4051 em todas as interfaces de rede
 
-	mqSever := mq.NewMQ()
-	go mqSever.Sub("test.*.test", func(data mq.MQData) {
+	config, err := utils.GetConfig()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	mq := server.NewMQ(config.MQ)
+	go mq.Subscribe("test.*.test", func(data server.MQData) {
 		fmt.Println(data.Topic, data.Payload)
 	})
 
-	mqSever.Service("test", func(data mq.MQData, replay func(err string, data string)) {
+	mq.Service("test", func(data server.MQData, replay func(err string, data string)) {
 		fmt.Println(data.Topic, data.Payload)
 		replay("", "okfffffff")
 	})
@@ -26,8 +36,8 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				mqSever.Pub("test.t555.test", "dddddddddddddddddd")
-				str, err := mqSever.Req("testdd", "dddd666ddd", 4*time.Second)
+				mq.Publish("test.t555.test", "dddddddddddddddddd")
+				str, err := mq.Request("testdd", "dddd666ddd", 4*time.Second)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -37,6 +47,11 @@ func main() {
 		}
 	}()
 
-	mqSever.Start(":8080")
+	go mq.Start()
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	<-exit
+	log.Println("Sinal de encerramento recebido, fechando o servidor...")
 
 }

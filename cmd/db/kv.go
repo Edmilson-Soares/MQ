@@ -1,51 +1,26 @@
-package mq
+package db
 
 import (
 	"fmt"
-	"log"
 
 	"go.etcd.io/bbolt"
 )
 
-type MQKV struct {
-	name string
-	db   *bbolt.DB
-}
-
-func NewMQKV(name string) *MQKV {
-	db, err := bbolt.Open(name, 0666, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	kv := &MQKV{
-		db:   db,
-		name: name,
-	}
-	kv.db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("store"))
-		if err != nil {
-			return err
-		}
-		return nil
-
-	})
-	return kv
-}
-func (kv *MQKV) BCreate(name string) error {
+func (kv *NoSQL) BCreate(name string) error {
 	return kv.db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(name))
+		_, err := tx.CreateBucketIfNotExists([]byte("kv_" + name))
 		if err != nil {
 			return err
 		}
 		return nil
 	})
 }
-func (kv *MQKV) BDelete(name string) error {
+func (kv *NoSQL) BDelete(name string) error {
 	return kv.db.Update(func(tx *bbolt.Tx) error {
 		if name == "store" {
 			return fmt.Errorf("can't delete store")
 		}
-		err := tx.DeleteBucket([]byte(name))
+		err := tx.DeleteBucket([]byte("kv_" + name))
 		if err != nil {
 			return err
 		}
@@ -53,22 +28,22 @@ func (kv *MQKV) BDelete(name string) error {
 	})
 }
 
-func (kv *MQKV) Set(key, value string) error {
+func (kv *NoSQL) Set(key, value string) error {
 	return kv.BSet("store", key, value)
 }
 
-func (kv *MQKV) Del(key string) error {
+func (kv *NoSQL) Del(key string) error {
 	return kv.BDel("store", key)
 }
-func (kv *MQKV) Get(key string) (string, error) {
+func (kv *NoSQL) Get(key string) (string, error) {
 	return kv.BGet("store", key)
 }
 
 ////////////////
 
-func (kv *MQKV) BSet(bucket, key, value string) error {
+func (kv *NoSQL) BSet(bucket, key, value string) error {
 	return kv.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucket))
+		bucket := tx.Bucket([]byte("kv_" + bucket))
 		if bucket == nil {
 			return fmt.Errorf("bucket não encontrado")
 		}
@@ -76,19 +51,19 @@ func (kv *MQKV) BSet(bucket, key, value string) error {
 	})
 }
 
-func (kv *MQKV) BDel(bucket, key string) error {
+func (kv *NoSQL) BDel(bucket, key string) error {
 	return kv.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucket))
+		bucket := tx.Bucket([]byte("kv_" + bucket))
 		if bucket == nil {
 			return fmt.Errorf("bucket não encontrado")
 		}
 		return bucket.Delete([]byte(key))
 	})
 }
-func (kv *MQKV) BGet(bucket, key string) (string, error) {
+func (kv *NoSQL) BGet(bucket, key string) (string, error) {
 	value := []byte{}
 	err := kv.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucket))
+		bucket := tx.Bucket([]byte("kv_" + bucket))
 		if bucket == nil {
 			return fmt.Errorf("bucket não encontrado")
 		}
@@ -99,11 +74,11 @@ func (kv *MQKV) BGet(bucket, key string) (string, error) {
 
 }
 
-func (kv *MQKV) BList(bucket string, filter func(k, v []byte) bool) (map[string]string, error) {
+func (kv *NoSQL) BList(bucket string, filter func(k, v []byte) bool) (map[string]string, error) {
 	result := make(map[string]string)
 
 	err := kv.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
+		b := tx.Bucket([]byte("kv_" + bucket))
 		if b == nil {
 			return fmt.Errorf("bucket '%s' não encontrado", bucket)
 		}

@@ -1,4 +1,4 @@
-package mq
+package server
 
 import (
 	"encoding/json"
@@ -11,8 +11,11 @@ func (mq *MQ) handleGet(id string, data MQData) {
 	if strings.Contains(data.Topic, ":") {
 		bucket = strings.Split(data.Topic, ":")[0]
 		key = strings.Split(data.Topic, ":")[1]
+		if bucket == "" {
+			bucket = "store"
+		}
 	}
-	str, err := mq.KV.BGet(bucket, key)
+	str, err := mq.DB.BGet(bucket, key)
 	if err != nil {
 		mq.Send(id, MQData{
 			Cmd:       "GET",
@@ -39,8 +42,11 @@ func (mq *MQ) handleSet(id string, data MQData) {
 	if strings.Contains(data.Topic, ":") {
 		bucket = strings.Split(data.Topic, ":")[0]
 		key = strings.Split(data.Topic, ":")[1]
+		if bucket == "" {
+			bucket = "store"
+		}
 	}
-	err := mq.KV.BSet(bucket, key, data.Payload)
+	err := mq.DB.BSet(bucket, key, data.Payload)
 	if err != nil {
 		mq.Send(id, MQData{
 			Cmd:       "SET",
@@ -68,8 +74,11 @@ func (mq *MQ) handleDel(id string, data MQData) {
 	if strings.Contains(data.Topic, ":") {
 		bucket = strings.Split(data.Topic, ":")[0]
 		key = strings.Split(data.Topic, ":")[1]
+		if bucket == "" {
+			bucket = "store"
+		}
 	}
-	err := mq.KV.BDel(bucket, key)
+	err := mq.DB.BDel(bucket, key)
 	if err != nil {
 		mq.Send(id, MQData{
 			Cmd:       "DEL",
@@ -91,7 +100,7 @@ func (mq *MQ) handleDel(id string, data MQData) {
 
 func (mq *MQ) handleBDel(id string, data MQData) {
 
-	err := mq.KV.BDelete(data.Topic)
+	err := mq.DB.BDelete(data.Topic)
 	if err != nil {
 		mq.Send(id, MQData{
 			Cmd:       "BDEL",
@@ -113,7 +122,7 @@ func (mq *MQ) handleBDel(id string, data MQData) {
 
 func (mq *MQ) handleBAdd(id string, data MQData) {
 
-	err := mq.KV.BCreate(data.Topic)
+	err := mq.DB.BCreate(data.Topic)
 	if err != nil {
 		mq.Send(id, MQData{
 			Cmd:       "BADD",
@@ -136,12 +145,17 @@ func (mq *MQ) handleBAdd(id string, data MQData) {
 //////////////////////////
 
 func (mq *MQ) handleBFilterKey(id string, data MQData) {
-
 	bucket := data.Topic
 	if bucket == "" {
 		bucket = "store"
 	}
-	res, err := mq.KV.BList(bucket, func(k, v []byte) bool {
+	if strings.Contains(data.Topic, ":") {
+		bucket = strings.Split(data.Topic, ":")[0]
+		if bucket == "" {
+			bucket = "store"
+		}
+	}
+	res, err := mq.DB.BList(bucket, func(k, v []byte) bool {
 		return strings.HasPrefix(string(k), data.Payload)
 	})
 
@@ -172,7 +186,13 @@ func (mq *MQ) handleBFilterVal(id string, data MQData) {
 	if bucket == "" {
 		bucket = "store"
 	}
-	res, err := mq.KV.BList(bucket, func(k, v []byte) bool {
+	if strings.Contains(data.Topic, ":") {
+		bucket = strings.Split(data.Topic, ":")[0]
+		if bucket == "" {
+			bucket = "store"
+		}
+	}
+	res, err := mq.DB.BList(bucket, func(k, v []byte) bool {
 		return strings.HasPrefix(string(v), data.Payload)
 	})
 

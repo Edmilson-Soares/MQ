@@ -1,15 +1,14 @@
-package mq
+package server
 
 import (
 	"bufio"
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 )
 
-func (mq *MQ) handleAuth(conn net.Conn) error {
-
+func (mq *MQ) handleAuth(conn net.Conn) (string, error) {
+	reqId := ""
 	reader := bufio.NewReader(conn)
 	for {
 		// Lê a mensagem do cliente até encontrar uma nova linha
@@ -22,23 +21,19 @@ func (mq *MQ) handleAuth(conn net.Conn) error {
 		data, err := jsonToStruct(str)
 		if err != nil {
 			fmt.Printf(": %s\n", err.Error())
-			return err
+			return reqId, err
 		}
-
+		reqId = data.RequestId
 		switch data.Cmd {
 		case "AUTH":
-			fmt.Println(data)
-			auth := strings.Split(data.Payload, ":")
-
-			if auth[0] == "user" && auth[1] == "pass" {
-				return nil
+			user := mq.auth[data.Topic]
+			if user != data.Payload {
+				return reqId, errors.New("Invalid auth")
 			}
-
-			return errors.New("Errr")
-
+			return reqId, nil
 		}
 
 	}
 
-	return nil
+	return reqId, nil
 }

@@ -1,4 +1,4 @@
-package mq
+package server
 
 import (
 	"net"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (mq *MQ) handleConnection(conn net.Conn) {
+func (mq *MQ) handleConnection(conn net.Conn, reqId string) {
 	id := uuid.New().String()
 	defer func() {
 		mq.clients[id].Close()
@@ -17,9 +17,10 @@ func (mq *MQ) handleConnection(conn net.Conn) {
 		mq.clients[id] = conn
 		mq.ips[id] = conn.RemoteAddr().String()
 		mq.Send(id, MQData{
-			Cmd:     "CNN",
-			Topic:   "",
-			Payload: id,
+			Cmd:       "CNN",
+			Topic:     "",
+			RequestId: reqId,
+			Payload:   id,
 		})
 	}()
 

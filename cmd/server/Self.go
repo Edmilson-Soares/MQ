@@ -1,4 +1,4 @@
-package mq
+package server
 
 import (
 	"errors"
@@ -8,14 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func (mq *MQ) Pub(topic, payload string) {
+func (mq *MQ) Publish(topic, payload string) {
 	mq.handlePub(MQData{
 		Topic:   topic,
 		Payload: payload,
 	})
 }
 
-func (mq *MQ) Sub(topic string, cb func(data MQData)) {
+func (mq *MQ) Subscribe(topic string, cb func(data MQData)) {
 	mq.subs[topic] = append(mq.subs[topic], "self")
 	mq.subself[topic] = append(mq.subself[topic], cb)
 }
@@ -24,7 +24,7 @@ func (mq *MQ) Service(topic string, fn func(data MQData, replay func(err string,
 	mq.serviceself[topic] = fn
 }
 
-func (mq *MQ) Req(topic, Payload string, timeout time.Duration) (string, error) {
+func (mq *MQ) Request(topic, Payload string, timeout time.Duration) (string, error) {
 	reqId := uuid.New().String()
 	mq.chrequest[reqId] = make(chan MQResponse) // cria um canal de string
 	mq.handleReq("self", MQData{

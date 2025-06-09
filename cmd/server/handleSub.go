@@ -1,4 +1,4 @@
-package mq
+package server
 
 func (mq *MQ) handleSub(id string, data MQData) {
 	mq.subs[data.Topic] = append(mq.subs[data.Topic], id)

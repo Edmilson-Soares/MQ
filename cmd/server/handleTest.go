@@ -1,4 +1,4 @@
-package mq
+package server
 
 func (mq *MQ) handleTest() {
 

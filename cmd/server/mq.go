@@ -1,10 +1,12 @@
-package mq
+package server
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"mq/cmd/db"
+	"mq/utils"
 	"net"
+	"strconv"
 )
 
 type MQData struct {
@@ -43,23 +45,25 @@ type MQ struct {
 	clients     map[string]net.Conn
 	ips         map[string]string
 	services    map[string]string
+	auth        map[string]string
+	config      utils.MQConfig
 	subs        map[string][]string
-	KV          *MQKV
+	DB          *db.NoSQL
 	subself     map[string][]func(data MQData)
 	chs         map[string]chan string     // cria um canal de string
 	chrequest   map[string]chan MQResponse // cria um canal de string
 	serviceself map[string]func(data MQData, replay func(err string, payload string))
 }
 
-func (mq *MQ) Start(url string) {
+func (mq *MQ) Start() error {
 
-	listener, err := net.Listen("tcp", url)
+	listener, err := net.Listen("tcp", mq.config.Broker+":"+strconv.Itoa(mq.config.Port))
 	if err != nil {
-		log.Fatalf("Erro ao iniciar o servidor: %s", err.Error())
+		return err
 	}
 	defer listener.Close()
 
-	fmt.Println("Servidor TCP iniciado e ouvindo na porta 8080...")
+	fmt.Println("Servidor TCP iniciado e ouvindo na " + mq.config.Broker + ":" + strconv.Itoa(mq.config.Port))
 
 	for {
 		conn, err := listener.Accept()
@@ -67,28 +71,30 @@ func (mq *MQ) Start(url string) {
 			fmt.Printf("Erro ao aceitar conexão: %s", err.Error())
 			continue
 		}
-		err = mq.handleAuth(conn)
+		reqId, err := mq.handleAuth(conn)
 		if err != nil {
 			mq.send(conn, MQData{
 				Cmd:       "ER_AUH",
-				RequestId: "",
+				RequestId: reqId,
 				Payload:   err.Error(),
 			})
 			conn.Close()
 		} else {
-			go mq.handleConnection(conn)
+			go mq.handleConnection(conn, reqId)
 		}
 
 	}
 }
 
-func NewMQ() *MQ {
-
+func NewMQ(config utils.MQConfig) *MQ {
+	dbNoSQL, _ := db.New(config.FileKV)
 	mq := MQ{
 		clients:     map[string]net.Conn{},
+		config:      config,
+		auth:        map[string]string{config.Username: config.Password},
 		subself:     make(map[string][]func(data MQData)),
 		chs:         make(map[string]chan string),
-		KV:          NewMQKV("store.db"),
+		DB:          dbNoSQL,
 		ips:         make(map[string]string),
 		services:    make(map[string]string),
 		subs:        make(map[string][]string),

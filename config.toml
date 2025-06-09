@@ -1,0 +1,16 @@
+[mq]
+enabled = true
+broker = "0.0.0.0"
+port = 4051
+kvfile = "store/store.db"
+username = "root"
+password = "fffffffffffffffffff"
+
+
+[logs]
+enabled = true
+filename = "store/logs/manager.log"
+maxSize = 10                        # megabytes
+maxBackups = 5                      # quantidade de backups
+maxAge = 30                         # dias
+compress = true                     # compactar backups

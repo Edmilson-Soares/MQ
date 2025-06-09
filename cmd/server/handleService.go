@@ -1,4 +1,4 @@
-package mq
+package server
 
 func (mq *MQ) handleService(id string, data MQData) {
 	mq.services[data.Topic] = id
